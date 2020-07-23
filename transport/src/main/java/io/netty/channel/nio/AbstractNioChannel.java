@@ -78,9 +78,12 @@ public abstract class AbstractNioChannel extends AbstractChannel {
      */
     protected AbstractNioChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
         super(parent);
+        //设置nio的ServerChannel
         this.ch = ch;
+        //设置nio的SelectionKey
         this.readInterestOp = readInterestOp;
         try {
+            //设置非阻塞 nio的api
             ch.configureBlocking(false);
         } catch (IOException e) {
             try {

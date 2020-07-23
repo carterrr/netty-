@@ -38,13 +38,22 @@ public final class UptimeServer {
 
     public static void main(String[] args) throws Exception {
 
+        //用来接收连接，只需要一个线程
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+
+        //用来处理事件
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+
         try {
+            //服务端启动器，这里没有启动
             ServerBootstrap b = new ServerBootstrap();
+            //将两个EventLoopGroup放入启动器中
+            //bossGroup设置为父类AbstractBootstrap中的EventLoopGroup
+            //workerGroup设置为ServerBootstrap中的EventLoopGroup childGroup
             b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .handler(new LoggingHandler(LogLevel.INFO))
+                    .channel(NioServerSocketChannel.class) //生成一个ReflectiveChannelFactory
+                    .handler(new LoggingHandler(LogLevel.INFO))  //设置成父类AbstractBootstrap中的handler
+                    //设置成ServerBootstrap中的childHandler
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) {
@@ -52,14 +61,14 @@ public final class UptimeServer {
                         }
                     });
 
-            // Bind and start to accept incoming connections.
+            // 绑定端口等待连接
             ChannelFuture f = b.bind(PORT).sync();
 
-            // Wait until the server socket is closed.
-            // In this example, this does not happen, but you can do that to gracefully
-            // shut down your server.
+            // 一直等到socket关闭
+            // 停止服务器.
             f.channel().closeFuture().sync();
         } finally {
+            //优雅关闭
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }

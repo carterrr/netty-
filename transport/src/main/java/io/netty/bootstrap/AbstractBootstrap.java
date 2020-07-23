@@ -307,7 +307,9 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
+            //channelFactory是NioServerSocketChannel的工厂 ReflectiveChannelFactory
             channel = channelFactory.newChannel();
+
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {

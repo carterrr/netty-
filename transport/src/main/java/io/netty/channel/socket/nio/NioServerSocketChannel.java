@@ -59,6 +59,8 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
              *
              *  See <a href="https://github.com/netty/netty/issues/2308">#2308</a>.
              */
+
+            //创建一个ServerSocketChannel ---java的nio知识
             return provider.openServerSocketChannel();
         } catch (IOException e) {
             throw new ChannelException(
@@ -82,13 +84,20 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
         this(newSocket(provider));
     }
 
+
+
     /**
      * Create a new instance using the given {@link ServerSocketChannel}.
      */
     public NioServerSocketChannel(ServerSocketChannel channel) {
+        //保存ServerSocketChannel和SelectionKey
         super(null, channel, SelectionKey.OP_ACCEPT);
+
+        // javaChannel() 获取的是ServerSocketChannel，获取ServerSocket
         config = new NioServerSocketChannelConfig(this, javaChannel().socket());
     }
+
+
 
     @Override
     public InetSocketAddress localAddress() {

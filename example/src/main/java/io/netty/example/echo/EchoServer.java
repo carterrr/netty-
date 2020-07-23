@@ -48,9 +48,11 @@ public final class EchoServer {
             sslCtx = null;
         }
 
-        // Configure the server.
+        //用来接收连接，只需要一个线程
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        //用来处理事件
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+
         final EchoServerHandler serverHandler = new EchoServerHandler();
         try {
             ServerBootstrap b = new ServerBootstrap();
