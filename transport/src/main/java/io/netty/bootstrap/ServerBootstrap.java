@@ -129,19 +129,25 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
 
     @Override
     void init(Channel channel) {
+        //向channel中添加 构建ServerBootstrap设置的options参数，这个是设置到AbstractBootstrap中的，设置到NioSocketChannelConfig中
         setChannelOptions(channel, newOptionsArray(), logger);
+
+        //向channel中添加 构建ServerBootstrap设置的attr参数，设置到NioSocketChannel父类DefaultAttributeMap中
         setAttributes(channel, attrs0().entrySet().toArray(EMPTY_ATTRIBUTE_ARRAY));
 
         ChannelPipeline p = channel.pipeline();
 
         final EventLoopGroup currentChildGroup = childGroup;
         final ChannelHandler currentChildHandler = childHandler;
+
+        //构建ServerBootstrap设置的childOptions参数
         final Entry<ChannelOption<?>, Object>[] currentChildOptions;
         synchronized (childOptions) {
             currentChildOptions = childOptions.entrySet().toArray(EMPTY_OPTION_ARRAY);
         }
         final Entry<AttributeKey<?>, Object>[] currentChildAttrs = childAttrs.entrySet().toArray(EMPTY_ATTRIBUTE_ARRAY);
 
+        //向管道中最后添加一个Handler
         p.addLast(new ChannelInitializer<Channel>() {
             @Override
             public void initChannel(final Channel ch) {

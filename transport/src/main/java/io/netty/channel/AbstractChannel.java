@@ -74,7 +74,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         id = newId();
         //unsafe api工具
         unsafe = newUnsafe();
-        //新建一个ChannelPipeline  DefaultChannelPipeline
+        //新建一个ChannelPipeline管道  DefaultChannelPipeline
         pipeline = newChannelPipeline();
     }
 

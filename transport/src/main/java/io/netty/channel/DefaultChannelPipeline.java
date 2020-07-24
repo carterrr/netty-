@@ -90,10 +90,13 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     private boolean registered;
 
     protected DefaultChannelPipeline(Channel channel) {
+        //当前的channel
         this.channel = ObjectUtil.checkNotNull(channel, "channel");
+
         succeededFuture = new SucceededChannelFuture(channel, null);
         voidPromise =  new VoidChannelPromise(channel, true);
 
+        //构建一个只有头和尾部的默认链表
         tail = new TailContext(this);
         head = new HeadContext(this);
 
@@ -156,6 +159,8 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     public final ChannelPipeline addFirst(EventExecutorGroup group, String name, ChannelHandler handler) {
         final AbstractChannelHandlerContext newCtx;
         synchronized (this) {
+
+            //参考 addLast注释
             checkMultiplicity(handler);
             name = filterName(name, handler);
 
@@ -199,17 +204,28 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     public final ChannelPipeline addLast(EventExecutorGroup group, String name, ChannelHandler handler) {
         final AbstractChannelHandlerContext newCtx;
         synchronized (this) {
+            //除了注解了@Sharable的handler,其余的都不能被多次添加删除
             checkMultiplicity(handler);
 
+            //新建一个DefaultChannelHandlerContext,
+            //DefaultChannelHandlerContext中保存了当前Pipeline、当前的handler和名称，如果有EventExecutorGroup话会有一个Executor
             newCtx = newContext(group, filterName(name, handler), handler);
 
+            //添加到链表尾部,tail之前
             addLast0(newCtx);
+
+
+            //如果registered的为false，说明channel没有在eventLoop上注册，
+            //没注册的话这里就会添加一个task任务，一旦channel注册了，就会调用 ChannelHandler.handlerAdded(...)
 
             // If the registered is false it means that the channel was not registered on an eventLoop yet.
             // In this case we add the context to the pipeline and add a task that will call
             // ChannelHandler.handlerAdded(...) once the channel is registered.
             if (!registered) {
+                //将刚才创建的DefaultChannelHandlerContext设置为ADD_PENDING状态
                 newCtx.setAddPending();
+
+                //创建回调任务
                 callHandlerCallbackLater(newCtx, true);
                 return this;
             }
@@ -1120,7 +1136,10 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     private void callHandlerCallbackLater(AbstractChannelHandlerContext ctx, boolean added) {
         assert !registered;
 
+        //添加handler的回调任务是PendingHandlerAddedTask，删除的是PendingHandlerRemovedTask，传入当前的ChannelHandlerContext
         PendingHandlerCallback task = added ? new PendingHandlerAddedTask(ctx) : new PendingHandlerRemovedTask(ctx);
+
+        //将任务存入链表中
         PendingHandlerCallback pending = pendingHandlerCallbackHead;
         if (pending == null) {
             pendingHandlerCallbackHead = task;
