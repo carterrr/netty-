@@ -51,6 +51,8 @@ public final class ThreadExecutorMap {
     public static Executor apply(final Executor executor, final EventExecutor eventExecutor) {
         ObjectUtil.checkNotNull(executor, "executor");
         ObjectUtil.checkNotNull(eventExecutor, "eventExecutor");
+
+        //包装了一层
         return new Executor() {
             @Override
             public void execute(final Runnable command) {
@@ -66,11 +68,14 @@ public final class ThreadExecutorMap {
     public static Runnable apply(final Runnable command, final EventExecutor eventExecutor) {
         ObjectUtil.checkNotNull(command, "command");
         ObjectUtil.checkNotNull(eventExecutor, "eventExecutor");
+
         return new Runnable() {
             @Override
             public void run() {
+                //设置当前的EventExecutor，也就是EventLoop
                 setCurrentEventExecutor(eventExecutor);
                 try {
+                    //执行
                     command.run();
                 } finally {
                     setCurrentEventExecutor(null);

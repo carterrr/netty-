@@ -136,9 +136,11 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                  SelectStrategy strategy, RejectedExecutionHandler rejectedExecutionHandler,
                  EventLoopTaskQueueFactory queueFactory) {
         //parent就是存放当前NioEventLoop的NioEventLoopGroup
+        //newTaskQueue 创建队列
         super(parent, executor, false, newTaskQueue(queueFactory), newTaskQueue(queueFactory),
                 rejectedExecutionHandler);
         this.provider = ObjectUtil.checkNotNull(selectorProvider, "selectorProvider");
+        //select事件策略
         this.selectStrategy = ObjectUtil.checkNotNull(strategy, "selectStrategy");
         //创建一个Selector用于监听事件java nio的方法
         final SelectorTuple selectorTuple = openSelector();
@@ -440,6 +442,9 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             try {
                 int strategy;
                 try {
+                    //selectNowSupplier 方法是调用selector的selectNow方法，这个方法不阻塞，立即返回现有的事件，没有事件返回0
+                    //如果当前任务队列中有任务，调用selectNowSupplier的非阻塞方法，否则，返回-1，接下来执行阻塞方法
+                    //这是为了能即时调用任务队列中的任务
                     strategy = selectStrategy.calculateStrategy(selectNowSupplier, hasTasks());
                     switch (strategy) {
                     case SelectStrategy.CONTINUE:
@@ -777,6 +782,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
     @Override
     protected void wakeup(boolean inEventLoop) {
+        //仅仅当当前线程不是EventLoop中的线程，而且不是AWAKE唤醒状态的时候，就唤醒 selector
         if (!inEventLoop && nextWakeupNanos.getAndSet(AWAKE) != AWAKE) {
             selector.wakeup();
         }

@@ -552,6 +552,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         if (!inEventLoop) {
             // Use offer as we actually only need this to unblock the thread and if offer fails we do not care as there
             // is already something in the queue.
+            //向队列中添加任务
             taskQueue.offer(WAKEUP_TASK);
         }
     }
@@ -815,6 +816,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     @Override
     public void execute(Runnable task) {
         ObjectUtil.checkNotNull(task, "task");
+        //wakesUpForTask方法默认true
         execute(task, !(task instanceof LazyRunnable) && wakesUpForTask(task));
     }
 
@@ -824,8 +826,12 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     }
 
     private void execute(Runnable task, boolean immediate) {
+        //当前线程是不是EventLoop中的线程
         boolean inEventLoop = inEventLoop();
+        //往任务队列中添加
         addTask(task);
+
+        //如果当前线程不是EventLoop中的线程,尝试启动EventLoop
         if (!inEventLoop) {
             startThread();
             if (isShutdown()) {
@@ -845,7 +851,11 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             }
         }
 
+        //addTaskWakesUp 表示执行addTask就会唤起当前线程 ，NioEventLoop中默认是false
+        //immediate 表示是否立即执行
+        //wakeup方法默认 和addTask方法类似，不过NioEventLoop这个子类重写了这个方法
         if (!addTaskWakesUp && immediate) {
+
             wakeup(inEventLoop);
         }
     }
@@ -940,6 +950,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private static final long SCHEDULE_PURGE_INTERVAL = TimeUnit.SECONDS.toNanos(1);
 
     private void startThread() {
+        //如果是未执行状态，就启动新线程，否则无视
         if (state == ST_NOT_STARTED) {
             if (STATE_UPDATER.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {
                 boolean success = false;
@@ -975,6 +986,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     private void doStartThread() {
         assert thread == null;
+        //提交启动新任务
         executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -984,8 +996,10 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 }
 
                 boolean success = false;
+                //更新上一次执行时间是当前时间
                 updateLastExecutionTime();
                 try {
+                    //具体方法在子类中，如 NioEventLoop
                     SingleThreadEventExecutor.this.run();
                     success = true;
                 } catch (Throwable t) {

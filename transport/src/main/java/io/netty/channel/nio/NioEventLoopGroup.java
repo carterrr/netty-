@@ -69,6 +69,7 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
     }
 
     public NioEventLoopGroup(int nThreads, Executor executor) {
+        // 每一个NioEventLoopGroup都有一个SelectorProvider
         this(nThreads, executor, SelectorProvider.provider());
     }
 
@@ -88,6 +89,7 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
 
     public NioEventLoopGroup(
             int nThreads, Executor executor, final SelectorProvider selectorProvider) {
+        //定义select 策略工厂，就是nio需要往selector上注册哪些事件
         this(nThreads, executor, selectorProvider, DefaultSelectStrategyFactory.INSTANCE);
     }
 
