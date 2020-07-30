@@ -140,7 +140,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         super(parent, executor, false, newTaskQueue(queueFactory), newTaskQueue(queueFactory),
                 rejectedExecutionHandler);
         this.provider = ObjectUtil.checkNotNull(selectorProvider, "selectorProvider");
-        //select事件策略
+        //select策略
         this.selectStrategy = ObjectUtil.checkNotNull(strategy, "selectStrategy");
         //创建一个Selector用于监听事件java nio的方法
         final SelectorTuple selectorTuple = openSelector();
@@ -485,18 +485,22 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 needsToSelectAgain = false;
                 final int ioRatio = this.ioRatio;
                 boolean ranTasks;
+                //ioRatio io的占用的时间比例
+                //当小于100的时候会得出一个异步任务的超时时间
                 if (ioRatio == 100) {
                     try {
+                        //strategy大于0的时候，表示当前有事件select到了
                         if (strategy > 0) {
                             processSelectedKeys();
                         }
                     } finally {
-                        // Ensure we always run tasks.
+                        //运行 任务队列中的所有任务 ，会执行完所有的任务才返回
                         ranTasks = runAllTasks();
                     }
                 } else if (strategy > 0) {
                     final long ioStartTime = System.nanoTime();
                     try {
+
                         processSelectedKeys();
                     } finally {
                         // Ensure we always run tasks.
@@ -504,6 +508,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                         ranTasks = runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
                     }
                 } else {
+                    //运行 任务队列中的所有任务，一次最多运行64个任务
                     ranTasks = runAllTasks(0); // This will run the minimum number of tasks
                 }
 

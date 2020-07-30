@@ -126,10 +126,13 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
     protected final Runnable pollScheduledTask(long nanoTime) {
         assert inEventLoop();
 
+        //使用peek获取
         ScheduledFutureTask<?> scheduledTask = peekScheduledTask();
+        //没有定时任务或定时任务没到时间都返回null
         if (scheduledTask == null || scheduledTask.deadlineNanos() - nanoTime > 0) {
             return null;
         }
+        //删除，因为之前peek只返回没有删除
         scheduledTaskQueue.remove();
         scheduledTask.setConsumed();
         return scheduledTask;

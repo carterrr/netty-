@@ -89,7 +89,7 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
 
     public NioEventLoopGroup(
             int nThreads, Executor executor, final SelectorProvider selectorProvider) {
-        //定义select 策略工厂，就是nio需要往selector上注册哪些事件
+        //定义select策略工厂，这个select策略不是java nio的select，而是netty自定义了一个策略，决定怎么用java nio select阻塞或是异步，或是跳过
         this(nThreads, executor, selectorProvider, DefaultSelectStrategyFactory.INSTANCE);
     }
 
