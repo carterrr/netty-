@@ -584,9 +584,12 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     }
 
     private void processSelectedKeys() {
+        //selectedKeys这个集合初始化的时候通过反射放入selector中
+        //对于nio selector返回key的那个Set集合的一个优化
         if (selectedKeys != null) {
             processSelectedKeysOptimized();
         } else {
+            //处理selector中的事件
             processSelectedKeysPlain(selector.selectedKeys());
         }
     }
@@ -618,14 +621,18 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
 
         Iterator<SelectionKey> i = selectedKeys.iterator();
+
         for (;;) {
             final SelectionKey k = i.next();
+            //获取当前key附加的对象
             final Object a = k.attachment();
             i.remove();
-
+             //如果附加的对象是AbstractNioChannel
             if (a instanceof AbstractNioChannel) {
+                //读写事件的处理
                 processSelectedKey(k, (AbstractNioChannel) a);
             } else {
+                //否则就是一个NioTask，逻辑由自己自定义
                 @SuppressWarnings("unchecked")
                 NioTask<SelectableChannel> task = (NioTask<SelectableChannel>) a;
                 processSelectedKey(k, task);
@@ -635,6 +642,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 break;
             }
 
+            //当有地方调用 SelectionKey.cancel() 方法取消事件注册的事件，这个值就是true，这个情况下需要再读一遍事件
             if (needsToSelectAgain) {
                 selectAgain();
                 selectedKeys = selector.selectedKeys();
@@ -655,17 +663,19 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             // null out entry in the array to allow to have it GC'ed once the Channel close
             // See https://github.com/netty/netty/issues/2363
             selectedKeys.keys[i] = null;
-
+            //获取当前key附加的对象
             final Object a = k.attachment();
-
+            //如果附加的对象是AbstractNioChannel
             if (a instanceof AbstractNioChannel) {
+                //读写事件的处理
                 processSelectedKey(k, (AbstractNioChannel) a);
             } else {
                 @SuppressWarnings("unchecked")
+                //否则就是一个NioTask，逻辑由自己自定义
                 NioTask<SelectableChannel> task = (NioTask<SelectableChannel>) a;
                 processSelectedKey(k, task);
             }
-
+            //当有地方调用 SelectionKey.cancel() 方法取消事件注册的事件，这个值就是true，这个情况下需要再读一遍事件
             if (needsToSelectAgain) {
                 // null out entries in the array to allow to have it GC'ed once the Channel close
                 // See https://github.com/netty/netty/issues/2363
@@ -704,6 +714,8 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             int readyOps = k.readyOps();
             // We first need to call finishConnect() before try to trigger a read(...) or write(...) as otherwise
             // the NIO JDK channel implementation may throw a NotYetConnectedException.
+
+            //一下是对于OP_CONNECT导致Selector.select(..)的一个bug的解决
             if ((readyOps & SelectionKey.OP_CONNECT) != 0) {
                 // remove OP_CONNECT as otherwise Selector.select(..) will always return without blocking
                 // See https://github.com/netty/netty/issues/924
@@ -715,6 +727,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             }
 
             // Process OP_WRITE first as we may be able to write some queued buffers and so free memory.
+            //如果是写出的事件
             if ((readyOps & SelectionKey.OP_WRITE) != 0) {
                 // Call forceFlush which will also take care of clear the OP_WRITE once there is nothing left to write
                 ch.unsafe().forceFlush();
@@ -722,6 +735,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
             // Also check for readOps of 0 to workaround possible JDK bug which may otherwise lead
             // to a spin loop
+            //如果是读入的事件
             if ((readyOps & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 || readyOps == 0) {
                 unsafe.read();
             }
@@ -733,6 +747,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     private static void processSelectedKey(SelectionKey k, NioTask<SelectableChannel> task) {
         int state = 0;
         try {
+            //调用NioTask的channelReady方法，这个自定义实现
             task.channelReady(k.channel(), k);
             state = 1;
         } catch (Exception e) {
