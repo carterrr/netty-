@@ -326,6 +326,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         //config 子类是ServerBootStrap就是 ServerBootstrapConfig
         //group获取的就是 EventLoopGroup
         //这里就是获取了ServerBootStrap中的bossGroup这个NioEventLoopGroup，并调用register方法
+        //具体在MultithreadEventLoopGroup中
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {

@@ -90,7 +90,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
      * Create a new instance using the given {@link ServerSocketChannel}.
      */
     public NioServerSocketChannel(ServerSocketChannel channel) {
-        //保存ServerSocketChannel和SelectionKey
+        //保存ServerSocketChannel和SelectionKey,这里已经标明当前感兴趣的事件是OP_ACCEPT，也就是接受连接
         super(null, channel, SelectionKey.OP_ACCEPT);
 
         // javaChannel() 获取的是ServerSocketChannel，获取ServerSocket

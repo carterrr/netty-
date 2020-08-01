@@ -225,7 +225,8 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                 //将刚才创建的DefaultChannelHandlerContext设置为ADD_PENDING状态
                 newCtx.setAddPending();
 
-                //创建回调任务
+                //创建回调任务 就是ChannelHandler的 handleAdd  handleRemove方法的任务回调
+                //就是说这个会在注册完成之后被触发
                 callHandlerCallbackLater(newCtx, true);
                 return this;
             }
@@ -236,6 +237,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                 return this;
             }
         }
+        //如果是已经注册过的，那么就会立即触发ChannelHandler的handleAdd或handleRemove方法
         callHandlerAdded0(newCtx);
         return this;
     }
@@ -659,6 +661,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     final void invokeHandlerAddedIfNeeded() {
         assert channel.eventLoop().inEventLoop();
+        //判断是否第一次调用这个方法
         if (firstRegistration) {
             firstRegistration = false;
             // We are now registered to the EventLoop. It's time to call the callbacks for the ChannelHandlers,
@@ -1127,6 +1130,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         // holding the lock and so produce a deadlock if handlerAdded(...) will try to add another handler from outside
         // the EventLoop.
         PendingHandlerCallback task = pendingHandlerCallbackHead;
+        //依次调用链表中的回调方法
         while (task != null) {
             task.execute();
             task = task.next;

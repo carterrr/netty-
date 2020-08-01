@@ -501,26 +501,34 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                     return;
                 }
                 boolean firstRegistration = neverRegistered;
+                //执行注册方法  AbstractNioChannel
                 doRegister();
                 neverRegistered = false;
                 registered = true;
 
                 // Ensure we call handlerAdded(...) before we actually notify the promise. This is needed as the
                 // user may already fire events through the pipeline in the ChannelFutureListener.
+                //这里很重要
+                //这是调用已注册到当前管道的handler列表的 handlerAdded方法
+                //调用的是之前注册的回调方法
+                //本来正常来说添加一个handle会立马触发这个方法，不过当时因为没有注册，所以就放到这里调用
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);
+                //这是调用已注册的handler列表的 channelRegistered方法
                 pipeline.fireChannelRegistered();
                 // Only fire a channelActive if the channel has never been registered. This prevents firing
                 // multiple channel actives if the channel is deregistered and re-registered.
                 if (isActive()) {
                     if (firstRegistration) {
+                        //如果当前 channel是第一次注册，就会触发这个channelActive方法
                         pipeline.fireChannelActive();
                     } else if (config().isAutoRead()) {
                         // This channel was registered before and autoRead() is set. This means we need to begin read
                         // again so that we process inbound data.
                         //
                         // See https://github.com/netty/netty/issues/4805
+                        //真正注册事件
                         beginRead();
                     }
                 }

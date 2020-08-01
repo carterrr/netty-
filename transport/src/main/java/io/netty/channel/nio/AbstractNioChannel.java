@@ -380,6 +380,10 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         boolean selected = false;
         for (;;) {
             try {
+                //javaChannel方法获取到当前的java nio的socket Channel
+                //eventLoop()方法获取当前的EventLoop
+                //unwrappedSelector方法获取 java nio的selector
+                //不过这里注册的是0事件，不是任何nio中的事件，所以当前没有真正注册，只是获取到了一个selectionKey
                 selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
                 return;
             } catch (CancelledKeyException e) {
@@ -412,6 +416,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         readPending = true;
 
+        //这里才真正把事件注册
         final int interestOps = selectionKey.interestOps();
         if ((interestOps & readInterestOp) == 0) {
             selectionKey.interestOps(interestOps | readInterestOp);

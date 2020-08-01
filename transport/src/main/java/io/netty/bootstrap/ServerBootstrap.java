@@ -149,14 +149,20 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
 
         //向管道中最后添加一个Handler
         p.addLast(new ChannelInitializer<Channel>() {
+            // register时被调用
             @Override
             public void initChannel(final Channel ch) {
+                //传入的ch 实际上还是NioServerSocketChannel
                 final ChannelPipeline pipeline = ch.pipeline();
                 ChannelHandler handler = config.handler();
+                //向 NioServerSocketChannel添加handler,
+                //所以说之前 ServerBootstrap 的handle方法设置的 handler就是添加到NioServerSocketChannel的管道中的
                 if (handler != null) {
                     pipeline.addLast(handler);
                 }
 
+                //最后再添加一个ServerBootstrapAcceptor
+                // 因为当前是 NioServerSocketChannel register之后，所以ServerBootstrapAcceptor只会在注册完成之后被调用
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
