@@ -61,9 +61,12 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
 
         @Override
         public void read() {
+            //ServerSocketChannel接收连接时，执行的管道是ServerSocketChannel的管道
+            //SocketChannel 读取数据事件时，执行的管道是ChannelInitializer注册的管道
             assert eventLoop().inEventLoop();
             final ChannelConfig config = config();
             final ChannelPipeline pipeline = pipeline();
+
             final RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();
             allocHandle.reset(config);
 

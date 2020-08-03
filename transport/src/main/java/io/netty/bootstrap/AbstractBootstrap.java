@@ -269,18 +269,23 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
 
     private ChannelFuture doBind(final SocketAddress localAddress) {
+        //执行初始化channel，以及注册ServerSocketChannel到selector上
+        //返回一个Future
         final ChannelFuture regFuture = initAndRegister();
         final Channel channel = regFuture.channel();
         if (regFuture.cause() != null) {
             return regFuture;
         }
 
+        // 如果注册已经结束了，那么就直接执行绑定端口操作
         if (regFuture.isDone()) {
             // At this point we know that the registration was complete and successful.
             ChannelPromise promise = channel.newPromise();
+            //绑定端口
             doBind0(regFuture, channel, localAddress, promise);
             return promise;
         } else {
+            //如果还没有结束，就注册一个回调，等到注册结束执行
             // Registration future is almost always fulfilled already, but just in case it's not.
             final PendingRegistrationPromise promise = new PendingRegistrationPromise(channel);
             regFuture.addListener(new ChannelFutureListener() {

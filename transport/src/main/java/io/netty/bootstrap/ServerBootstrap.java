@@ -221,6 +221,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             final Channel child = (Channel) msg;
 
+            //将childHandler添加到新连接的Channel的管道中
+            //这时候新Channel还没有执行注册
             child.pipeline().addLast(childHandler);
 
             setChannelOptions(child, childOptions, logger);
