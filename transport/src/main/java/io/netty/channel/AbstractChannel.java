@@ -514,6 +514,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 //本来正常来说添加一个handle会立马触发这个方法，不过当时因为没有注册，所以就放到这里调用
                 pipeline.invokeHandlerAddedIfNeeded();
 
+                //设置成功，确保成功后后续才会执行bind操作
                 safeSetSuccess(promise);
                 //这是调用已注册的handler列表的 channelRegistered方法
                 pipeline.fireChannelRegistered();
@@ -528,7 +529,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                         // again so that we process inbound data.
                         //
                         // See https://github.com/netty/netty/issues/4805
-                        //真正注册事件
+                        //真正注册事件 ，在所有的handler开始事件触发完成之后才真正开始接收io事件
                         beginRead();
                     }
                 }

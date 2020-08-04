@@ -163,6 +163,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
 
                 //最后再添加一个ServerBootstrapAcceptor
                 // 因为当前是 NioServerSocketChannel register之后，所以ServerBootstrapAcceptor只会在注册完成之后被调用
+                // 这里有一个注意点，因为调用的地方是 register0方法中，该方法处于线程中，此时提交execute会以同步的方式进行
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
@@ -229,6 +230,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             setAttributes(child, childAttrs);
 
             try {
+                //再次执行注册，不过这时候的Channel是NioSocketChannel
                 childGroup.register(child).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {

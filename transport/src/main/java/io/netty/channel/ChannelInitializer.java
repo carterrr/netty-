@@ -109,6 +109,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
             // The good thing about calling initChannel(...) in handlerAdded(...) is that there will be no ordering
             // surprises if a ChannelInitializer will add another ChannelInitializer. This is as all handlers
             // will be added in the expected order.
+
             if (initChannel(ctx)) {
 
                 // We are done with init the Channel, removing the initializer now.
@@ -127,6 +128,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
         //第二次添加同样的会返回false，所以这只会调用一次
         if (initMap.add(ctx)) { // Guard against re-entrance.
             try {
+                //调用子类逻辑
                 initChannel((C) ctx.channel());
             } catch (Throwable cause) {
                 // Explicitly call exceptionCaught(...) as we removed the handler before calling initChannel(...).

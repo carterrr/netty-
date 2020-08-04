@@ -328,8 +328,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
 
-        //config 子类是ServerBootStrap就是 ServerBootstrapConfig
-        //group获取的就是 EventLoopGroup
+        //config 子类如果当前是ServerBootStrap就是 ServerBootstrapConfig
+        //group获取的就是 bossGroup传入的 EventLoopGroup
         //这里就是获取了ServerBootStrap中的bossGroup这个NioEventLoopGroup，并调用register方法
         //具体在MultithreadEventLoopGroup中
         ChannelFuture regFuture = config().group().register(channel);
