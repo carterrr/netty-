@@ -112,7 +112,7 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> {
         if (remoteAddress == null) {
             throw new IllegalStateException("remoteAddress not set");
         }
-
+        //
         return doResolveAndConnect(remoteAddress, config.localAddress());
     }
 
@@ -260,8 +260,8 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> {
     @SuppressWarnings("unchecked")
     void init(Channel channel) {
         ChannelPipeline p = channel.pipeline();
+        //将Bootstrap 构建时 handler(..) 方法传入的Handler放入管道里面 ，一般是ChannelInitializer
         p.addLast(config.handler());
-
         setChannelOptions(channel, newOptionsArray(), logger);
         setAttributes(channel, attrs0().entrySet().toArray(EMPTY_ATTRIBUTE_ARRAY));
     }

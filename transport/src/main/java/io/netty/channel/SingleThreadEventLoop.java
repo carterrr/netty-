@@ -87,6 +87,7 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
         ObjectUtil.checkNotNull(promise, "promise");
         //把刚才传入的Channel获取出来，执行register方法
         //如果是NioServerSocketChannel  NioMessageUnsafe --》AbstractUnsafe
+        // 如果是 NioSocketChannel  NioSocketChannelUnsafe--》 AbstractUnsafe
         promise.channel().unsafe().register(this, promise);
         return promise;
     }

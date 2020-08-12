@@ -73,7 +73,8 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         this.parent = parent;
         //ChannelId
         id = newId();
-        //unsafe api工具
+        //unsafe api工具  如果当前是 NioServerSocketChannel 那就是NioMessageUnsafe
+         //如果当前是 NioSocketChannel  那就是  NioSocketChannelUnsafe
         unsafe = newUnsafe();
         //新建一个ChannelPipeline管道  DefaultChannelPipeline
         pipeline = newChannelPipeline();

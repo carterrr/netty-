@@ -312,10 +312,12 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
-            //channelFactory是NioServerSocketChannel的工厂 ReflectiveChannelFactory
+            //如果是ServerBootstrap channelFactory是NioServerSocketChannel的工厂 ReflectiveChannelFactory
+            //如果是Bootstrap channelFactory是NioSocketChannel的工厂 ReflectiveChannelFactory
             channel = channelFactory.newChannel();
 
-            //初始化channel，设置参数
+            //初始化channel 这里主要是为了添加需要在register操作完成之后立马执行的Handler
+            //还有就是为了初始化一下参数设置
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {
@@ -330,7 +332,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
         //config 子类如果当前是ServerBootStrap就是 ServerBootstrapConfig
         //group获取的就是 bossGroup传入的 EventLoopGroup
-        //这里就是获取了ServerBootStrap中的bossGroup这个NioEventLoopGroup，并调用register方法
+        // 如果是BootStrap 就是BootstrapConfig  获取的group 也就是那唯一设置的EventLoopGroup
+        //获取了到了NioEventLoopGroup，并调用register方法
         //具体在MultithreadEventLoopGroup中
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {
