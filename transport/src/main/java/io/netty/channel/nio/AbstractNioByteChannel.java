@@ -137,18 +137,32 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                 return;
             }
             final ChannelPipeline pipeline = pipeline();
+
+            // ByteBufAllocator
+            // 如果指定了参数 io.netty.allocator.type，unpooled或pooled，
+            // 或者是Android 使用unpooled
+            // 其余都是pooled
+            // 两个类型对应 UnpooledByteBufAllocator 和 PooledByteBufAllocator
             final ByteBufAllocator allocator = config.getAllocator();
+
+            // AdaptiveRecvByteBufAllocator
+            // 用户预测缓冲区的大小
             final RecvByteBufAllocator.Handle allocHandle = recvBufAllocHandle();
+            //初始化预测值
             allocHandle.reset(config);
 
             ByteBuf byteBuf = null;
             boolean close = false;
             try {
                 do {
+                    //分配预测大小的byteBuf
                     byteBuf = allocHandle.allocate(allocator);
+
                     allocHandle.lastBytesRead(doReadBytes(byteBuf));
+
                     if (allocHandle.lastBytesRead() <= 0) {
                         // nothing was read. release the buffer.
+                        //没有读到任何的数据，释放buffer
                         byteBuf.release();
                         byteBuf = null;
                         close = allocHandle.lastBytesRead() < 0;
@@ -159,7 +173,9 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                         break;
                     }
 
+
                     allocHandle.incMessagesRead(1);
+
                     readPending = false;
                     pipeline.fireChannelRead(byteBuf);
                     byteBuf = null;

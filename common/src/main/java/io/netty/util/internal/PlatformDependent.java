@@ -116,6 +116,7 @@ public final class PlatformDependent {
     private static final AtomicLong DIRECT_MEMORY_COUNTER;
     private static final long DIRECT_MEMORY_LIMIT;
     private static final ThreadLocalRandomProvider RANDOM_PROVIDER;
+    //缓冲区清理器
     private static final Cleaner CLEANER;
     private static final int UNINITIALIZED_ARRAY_ALLOCATION_THRESHOLD;
     // For specifications, see https://www.freedesktop.org/software/systemd/man/os-release.html
@@ -124,6 +125,7 @@ public final class PlatformDependent {
     private static final String LINUX_ID_LIKE_PREFIX = "ID_LIKE=";
     public static final boolean BIG_ENDIAN_NATIVE_ORDER = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
+    //无操作的缓冲区清理器
     private static final Cleaner NOOP = new Cleaner() {
         @Override
         public void freeDirectBuffer(ByteBuffer buffer) {
@@ -185,9 +187,12 @@ public final class PlatformDependent {
 
         MAYBE_SUPER_USER = maybeSuperUser0();
 
+
+        //安卓上不能运行部分方法
         if (!isAndroid()) {
             // only direct to method if we are not running on android.
             // See https://github.com/netty/netty/issues/2604
+            //不同的jdk版本获取不同的Cleaner，如果都不支持的话就只能用NOOP
             if (javaVersion() >= 9) {
                 CLEANER = CleanerJava9.isSupported() ? new CleanerJava9() : NOOP;
             } else {
@@ -197,7 +202,10 @@ public final class PlatformDependent {
             CLEANER = NOOP;
         }
 
+
         // We should always prefer direct buffers by default if we can use a Cleaner to release direct buffers.
+        //当CLEANER 缓冲区清理器不是无操作的NOOP时，表示可以清理直接缓冲区，那么就会是true，在分配buffer的时候默认优先直接缓冲区
+        //可以通过io.netty.noPreferDirect参数设置
         DIRECT_BUFFER_PREFERRED = CLEANER != NOOP
                                   && !SystemPropertyUtil.getBoolean("io.netty.noPreferDirect", false);
         if (logger.isDebugEnabled()) {
