@@ -104,6 +104,9 @@ public abstract class DefaultMaxMessagesRecvByteBufAllocator implements MaxMessa
          */
         @Override
         public void reset(ChannelConfig config) {
+            //maxMessagePerRead 每一次读取最大的信息数
+            //totalMessages 本次总的读取数量
+            //totalBytesRead 本次总的读取字节数
             this.config = config;
             maxMessagePerRead = maxMessagesPerRead();
             totalMessages = totalBytesRead = 0;
@@ -111,6 +114,7 @@ public abstract class DefaultMaxMessagesRecvByteBufAllocator implements MaxMessa
 
         @Override
         public ByteBuf allocate(ByteBufAllocator alloc) {
+            //分配一个ByteBuf 大小为猜测的大小，第一次的话就是默认值
             return alloc.ioBuffer(guess());
         }
 
@@ -139,6 +143,12 @@ public abstract class DefaultMaxMessagesRecvByteBufAllocator implements MaxMessa
 
         @Override
         public boolean continueReading(UncheckedBooleanSupplier maybeMoreDataSupplier) {
+            // 继续读取的情况如下
+            // 配置isAutoRead必须是true
+            // respectMaybeMoreData  true表示当认为 有更多的数据的情况下才会继续 ，false 都会继续，直到没有数据
+            // 当respectMaybeMoreData为false  或者 respectMaybeMoreData是true 并且 当前认为有更多的数据  默认判断是attemptedBytesRead == lastBytesRead;
+            // totalMessages 总的读取次数  必须比 maxMessagePerRead 一次最大读取次数小
+            // totalBytesRead 当前读取字节必须大于 0 ，0 代表了没数据
             return config.isAutoRead() &&
                    (!respectMaybeMoreData || maybeMoreDataSupplier.get()) &&
                    totalMessages < maxMessagePerRead &&

@@ -113,6 +113,7 @@ public final class SocketUtils {
 
     public static SocketChannel accept(final ServerSocketChannel serverSocketChannel) throws IOException {
         try {
+            //java nio操作，接收一个连接，返回客户端连接的SocketChannel
             return AccessController.doPrivileged(new PrivilegedExceptionAction<SocketChannel>() {
                 @Override
                 public SocketChannel run() throws IOException {

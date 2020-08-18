@@ -30,7 +30,7 @@ import io.netty.handler.logging.LoggingHandler;
  * So it simply discards all message received.
  */
 public final class UptimeServer {
-    private static final int PORT = Integer.parseInt(System.getProperty("port", "8080"));
+    private static final int PORT = Integer.parseInt(System.getProperty("port", "9090"));
     private static final UptimeServerHandler handler = new UptimeServerHandler();
 
     private UptimeServer() {

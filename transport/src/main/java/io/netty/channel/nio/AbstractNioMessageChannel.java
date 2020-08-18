@@ -67,7 +67,11 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
             final ChannelConfig config = config();
             final ChannelPipeline pipeline = pipeline();
 
+             // AdaptiveRecvByteBufAllocator
+            // 用于预测缓冲区的大小
             final RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();
+
+            //初始化预测值
             allocHandle.reset(config);
 
             boolean closed = false;
@@ -75,6 +79,8 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
             try {
                 try {
                     do {
+                        //获取到连接的SocketChannel
+                        //正常返回1 ，有异常返回0
                         int localRead = doReadMessages(readBuf);
                         if (localRead == 0) {
                             break;
@@ -84,19 +90,27 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
                             break;
                         }
 
+                        //读取数据数量 + 1 （localRead）
                         allocHandle.incMessagesRead(localRead);
+
+                        //判断是否需要继续读取
+                        // allocHandle之前只有incMessagesRead 这一个操作，应该是都是false
                     } while (allocHandle.continueReading());
                 } catch (Throwable t) {
                     exception = t;
                 }
 
+                //处理 读取的数据
                 int size = readBuf.size();
                 for (int i = 0; i < size; i ++) {
                     readPending = false;
+                    //触发ChannelRead
                     pipeline.fireChannelRead(readBuf.get(i));
                 }
+
                 readBuf.clear();
                 allocHandle.readComplete();
+                //触发ChannelReadComplete
                 pipeline.fireChannelReadComplete();
 
                 if (exception != null) {

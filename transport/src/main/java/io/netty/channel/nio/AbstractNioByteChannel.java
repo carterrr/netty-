@@ -143,10 +143,11 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
             // 或者是Android 使用unpooled
             // 其余都是pooled
             // 两个类型对应 UnpooledByteBufAllocator 和 PooledByteBufAllocator
+            // 而且如果支持直接缓冲区的清理，优先使用直接缓冲区 directBuffer
             final ByteBufAllocator allocator = config.getAllocator();
 
             // AdaptiveRecvByteBufAllocator
-            // 用户预测缓冲区的大小
+            // 用于预测缓冲区的大小
             final RecvByteBufAllocator.Handle allocHandle = recvBufAllocHandle();
             //初始化预测值
             allocHandle.reset(config);
@@ -158,6 +159,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                     //分配预测大小的byteBuf
                     byteBuf = allocHandle.allocate(allocator);
 
+                     //doReadBytes
                     allocHandle.lastBytesRead(doReadBytes(byteBuf));
 
                     if (allocHandle.lastBytesRead() <= 0) {

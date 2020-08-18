@@ -34,7 +34,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 public final class UptimeClient {
 
     static final String HOST = System.getProperty("host", "127.0.0.1");
-    static final int PORT = Integer.parseInt(System.getProperty("port", "8080"));
+    static final int PORT = Integer.parseInt(System.getProperty("port", "9090"));
     // Sleep 5 seconds before a reconnection attempt.
     static final int RECONNECT_DELAY = Integer.parseInt(System.getProperty("reconnectDelay", "5"));
     // Reconnect when the server sends nothing for 10 seconds.
