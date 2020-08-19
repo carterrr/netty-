@@ -159,7 +159,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                     //分配预测大小的byteBuf
                     byteBuf = allocHandle.allocate(allocator);
 
-                     //doReadBytes
+                     //doReadBytes 将数据读取到byteBuf中
                     allocHandle.lastBytesRead(doReadBytes(byteBuf));
 
                     if (allocHandle.lastBytesRead() <= 0) {
