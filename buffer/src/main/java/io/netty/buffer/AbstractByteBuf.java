@@ -279,6 +279,7 @@ public abstract class AbstractByteBuf extends ByteBuf {
 
     @Override
     public ByteBuf ensureWritable(int minWritableBytes) {
+        //checkPositiveOrZero 检测 minWritableBytes >=0
         ensureWritable0(checkPositiveOrZero(minWritableBytes, "minWritableBytes"));
         return this;
     }
@@ -286,10 +287,14 @@ public abstract class AbstractByteBuf extends ByteBuf {
     final void ensureWritable0(int minWritableBytes) {
         final int writerIndex = writerIndex();
         final int targetCapacity = writerIndex + minWritableBytes;
+        //如果 等下目标容量capacity小于等于当前的capacity
         if (targetCapacity <= capacity()) {
+            // 校验缓冲区是否可以使用
             ensureAccessible();
             return;
         }
+
+        //目标容量capacity是否大于最大容量maxCapacity
         if (checkBounds && targetCapacity > maxCapacity) {
             ensureAccessible();
             throw new IndexOutOfBoundsException(String.format(
@@ -297,11 +302,13 @@ public abstract class AbstractByteBuf extends ByteBuf {
                     writerIndex, minWritableBytes, maxCapacity, this));
         }
 
+        // 将目标容量变成2的倍数
         // Normalize the target capacity to the power of 2.
         final int fastWritable = maxFastWritableBytes();
         int newCapacity = fastWritable >= minWritableBytes ? writerIndex + fastWritable
                 : alloc().calculateNewCapacity(targetCapacity, maxCapacity);
 
+        // 调整容量大小
         // Adjust to the new capacity.
         capacity(newCapacity);
     }
@@ -1119,7 +1126,9 @@ public abstract class AbstractByteBuf extends ByteBuf {
     @Override
     public int writeBytes(InputStream in, int length)
             throws IOException {
+        //确定足够的空间写入
         ensureWritable(length);
+
         int writtenBytes = setBytes(writerIndex, in, length);
         if (writtenBytes > 0) {
             writerIndex += writtenBytes;
@@ -1485,6 +1494,8 @@ public abstract class AbstractByteBuf extends ByteBuf {
      * if the buffer was released before.
      */
     protected final void ensureAccessible() {
+        //checkAccessible默认是true
+        //isAccessible 查看引用计数是否不等于0
         if (checkAccessible && !isAccessible()) {
             throw new IllegalReferenceCountException(0);
         }
