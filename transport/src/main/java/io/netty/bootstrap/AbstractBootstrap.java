@@ -120,7 +120,6 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         if (this.channelFactory != null) {
             throw new IllegalStateException("channelFactory set already");
         }
-
         this.channelFactory = channelFactory;
         return self();
     }

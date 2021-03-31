@@ -59,7 +59,7 @@ import java.util.List;
  * </pre>
  */
 public class DelimiterBasedFrameDecoder extends ByteToMessageDecoder {
-
+    // 支持多个分隔符
     private final ByteBuf[] delimiters;
     private final int maxFrameLength;
     private final boolean stripDelimiter;

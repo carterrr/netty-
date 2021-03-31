@@ -76,6 +76,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
 
     /**
      * Cumulate {@link ByteBuf}s by merge them into one {@link ByteBuf}'s, using memory copies.
+     * 内存复制的方式  更通用
      */
     public static final Cumulator MERGE_CUMULATOR = new Cumulator() {
         @Override
@@ -87,6 +88,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
             }
             try {
                 final int required = in.readableBytes();
+                //空间不够就扩容  内存复制的方式  看方法注释  using memory copies.
                 if (required > cumulation.maxWritableBytes() ||
                         (required > cumulation.maxFastWritableBytes() && cumulation.refCnt() > 1) ||
                         cumulation.isReadOnly()) {
@@ -96,6 +98,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                     //   assumed to be shared (e.g. refCnt() > 1) and the reallocation may not be safe.
                     return expandCumulation(alloc, cumulation, in);
                 }
+                // 追加写进来
                 cumulation.writeBytes(in, in.readerIndex(), required);
                 in.readerIndex(in.writerIndex());
                 return cumulation;
@@ -111,6 +114,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
      * Cumulate {@link ByteBuf}s by add them to a {@link CompositeByteBuf} and so do no memory copy whenever possible.
      * Be aware that {@link CompositeByteBuf} use a more complex indexing implementation so depending on your use-case
      * and the decoder implementation this may be slower then just use the {@link #MERGE_CUMULATOR}.
+     * 不是内存复制的方式  而是以逻辑视图方式进行组合
      */
     public static final Cumulator COMPOSITE_CUMULATOR = new Cumulator() {
         @Override
@@ -121,6 +125,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
             }
             CompositeByteBuf composite = null;
             try {
+                // 扩容
                 if (cumulation instanceof CompositeByteBuf && cumulation.refCnt() == 1) {
                     composite = (CompositeByteBuf) cumulation;
                     // Writer index must equal capacity if we are going to "write"
@@ -131,6 +136,8 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 } else {
                     composite = alloc.compositeBuffer(Integer.MAX_VALUE).addFlattenedComponents(true, cumulation);
                 }
+                // 避免内存复制
+                // 类似于在数据尾部中添加元素  而不是在buffer尾部追加
                 composite.addFlattenedComponents(true, in);
                 in = null;
                 return composite;
@@ -152,6 +159,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
     private static final byte STATE_HANDLER_REMOVED_PENDING = 2;
 
     ByteBuf cumulation;
+    // 默认内存复制累加器
     private Cumulator cumulator = MERGE_CUMULATOR;
     private boolean singleDecode;
     private boolean first;
@@ -270,7 +278,10 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
         if (msg instanceof ByteBuf) {
             CodecOutputList out = CodecOutputList.newInstance();
             try {
+                // 第一笔数据 =  数据积累器 = null 初始化
                 first = cumulation == null;
+                // 第一笔数据就直接赋值空内存 Unpooled.EMPTY_BUFFER 后累加msg
+                //              否则向cumulation 累加msg
                 cumulation = cumulator.cumulate(ctx.alloc(),
                         first ? Unpooled.EMPTY_BUFFER : cumulation, (ByteBuf) msg);
                 callDecode(ctx, cumulation, out);
@@ -420,7 +431,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
         try {
             while (in.isReadable()) {
                 int outSize = out.size();
-
+                // 初始 outsize == 0
                 if (outSize > 0) {
                     fireChannelRead(ctx, out, outSize);
                     out.clear();
@@ -437,6 +448,8 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 }
 
                 int oldInputLength = in.readableBytes();
+                // decode中不可以handler remove 清理数据  decode完毕需要
+                // 所以这样命名
                 decodeRemovalReentryProtection(ctx, in, out);
 
                 // Check if this handler was removed before continuing the loop.
@@ -504,6 +517,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
             decodeState = STATE_INIT;
             if (removePending) {
                 fireChannelRead(ctx, out, out.size());
+                // 清理out
                 out.clear();
                 handlerRemoved(ctx);
             }
