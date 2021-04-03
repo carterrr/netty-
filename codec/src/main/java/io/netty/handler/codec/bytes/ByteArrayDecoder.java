@@ -53,6 +53,7 @@ public class ByteArrayDecoder extends MessageToMessageDecoder<ByteBuf> {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
          // copy the ByteBuf content to a byte array
+        // 直接从 ByteBuf 中取出bytes[]数组
         out.add(ByteBufUtil.getBytes(msg));
     }
 }

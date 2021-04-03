@@ -38,12 +38,14 @@ import io.netty.handler.codec.MessageToByteEncoder;
  * @see CodedOutputByteBufferNano
  */
 @Sharable
+//Length字段 长度可变  Prepender 加在前面  appender  加在后面
 public class ProtobufVarint32LengthFieldPrepender extends MessageToByteEncoder<ByteBuf> {
 
     @Override
     protected void encode(
             ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
         int bodyLen = msg.readableBytes();
+        //length长度根据bodyLen变化
         int headerLen = computeRawVarint32Size(bodyLen);
         out.ensureWritable(headerLen + bodyLen);
         writeRawVarint32(out, bodyLen);
@@ -54,6 +56,7 @@ public class ProtobufVarint32LengthFieldPrepender extends MessageToByteEncoder<B
      * Writes protobuf varint32 to (@link ByteBuf).
      * @param out to be written to
      * @param value to be written
+     *
      */
     static void writeRawVarint32(ByteBuf out, int value) {
         while (true) {

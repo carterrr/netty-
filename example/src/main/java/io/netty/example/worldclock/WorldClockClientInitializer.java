@@ -39,12 +39,18 @@ public class WorldClockClientInitializer extends ChannelInitializer<SocketChanne
             p.addLast(sslCtx.newHandler(ch.alloc(), WorldClockClient.HOST, WorldClockClient.PORT));
         }
 
+        // 步骤1 一次解码器  转化protoBuf 得到byteBuf
         p.addLast(new ProtobufVarint32FrameDecoder());
+        // 步骤2 二次解码器  从byteBuf  -> java对象
         p.addLast(new ProtobufDecoder(WorldClockProtocol.LocalTimes.getDefaultInstance()));
 
+        // 步骤5  一次编码器  序列化的长度字段长度可变  修正读写指针等长度  处理对端粘包半包问题
         p.addLast(new ProtobufVarint32LengthFieldPrepender());
+        // 步骤4  二次编码器  java对象 ->  byte[] 字节数组  直接序列化
         p.addLast(new ProtobufEncoder());
 
+        // 步骤3  业务逻辑 返回一个结果 WorldClockProtocol.Locations对象
+        // protobuf已经帮我们做了二次编码过程 因此无需单独二次编码器
         p.addLast(new WorldClockClientHandler());
     }
 }

@@ -72,6 +72,7 @@ public class ProtobufDecoder extends MessageToMessageDecoder<ByteBuf> {
         boolean hasParser = false;
         try {
             // MessageLite.getParserForType() is not available until protobuf 2.5.0.
+            // protobuf 2.5.0. 后才有方法  getParserForType  才会用新的方式解码
             MessageLite.class.getDeclaredMethod("getParserForType");
             hasParser = true;
         } catch (Throwable t) {
@@ -113,14 +114,17 @@ public class ProtobufDecoder extends MessageToMessageDecoder<ByteBuf> {
             array = ByteBufUtil.getBytes(msg, msg.readerIndex(), length, false);
             offset = 0;
         }
-
+        // protobuf特有参数
+        // 扩展的  就按照扩展方式解码
         if (extensionRegistry == null) {
+            // 见 75行
             if (HAS_PARSER) {
                 out.add(prototype.getParserForType().parseFrom(array, offset, length));
             } else {
                 out.add(prototype.newBuilderForType().mergeFrom(array, offset, length).build());
             }
         } else {
+            // 非扩展的  就按照非扩展方式解码
             if (HAS_PARSER) {
                 out.add(prototype.getParserForType().parseFrom(
                         array, offset, length, extensionRegistry));

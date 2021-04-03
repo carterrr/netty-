@@ -20,6 +20,9 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.OutputStream;
 
+/**
+ * compact  压缩序列化 占用空间比ObjectOutputStream小
+ */
 class CompactObjectOutputStream extends ObjectOutputStream {
 
     static final int TYPE_FAT_DESCRIPTOR = 0;
@@ -31,6 +34,13 @@ class CompactObjectOutputStream extends ObjectOutputStream {
 
     @Override
     protected void writeStreamHeader() throws IOException {
+        // 重写该方法
+        // 对比JDK的 ObjectOutputStream() 方法
+        // protected void writeStreamHeader() throws IOException {
+        //        bout.writeShort(STREAM_MAGIC);
+        //        bout.writeShort(STREAM_VERSION);
+        //    }
+        // 少了一个STREAM_MAGIC  节省了一个魔数的空间
         writeByte(STREAM_VERSION);
     }
 
@@ -42,7 +52,19 @@ class CompactObjectOutputStream extends ObjectOutputStream {
             write(TYPE_FAT_DESCRIPTOR);
             super.writeClassDescriptor(desc);
         } else {
+            // 比较jdk  去掉了元信息  类属性信息
+            //  jdk元信息：
+            // out.writeShort(fields.length);
+            //        for (int i = 0; i < fields.length; i++) {
+            //            ObjectStreamField f = fields[i];
+            //            out.writeByte(f.getTypeCode());
+            //            out.writeUTF(f.getName());
+            //            if (!f.isPrimitive()) {
+            //                out.writeTypeString(f.getTypeString());
+            //            }
+            //        }
             write(TYPE_THIN_DESCRIPTOR);
+            // 类名用于反序列化  必须要  因为已经没有类属性信息  这里可以反射读取
             writeUTF(desc.getName());
         }
     }

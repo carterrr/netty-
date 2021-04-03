@@ -40,6 +40,8 @@ import java.util.List;
  * @see CodedInputStream
  * @see CodedInputByteBufferNano
  */
+
+// Varint 长度字段长度可变  实际数据越小 长度字段使用字节数越少  节省空间 因此不用LengthFieldBasedFrameDecoder
 public class ProtobufVarint32FrameDecoder extends ByteToMessageDecoder {
 
     // TODO maxFrameLength + safe skip + fail-fast option
@@ -50,6 +52,7 @@ public class ProtobufVarint32FrameDecoder extends ByteToMessageDecoder {
             throws Exception {
         in.markReaderIndex();
         int preIndex = in.readerIndex();
+        // 长度字段的解析方法  得到一个长度 从而的到长度  解决粘包半包问题
         int length = readRawVarint32(in);
         if (preIndex == in.readerIndex()) {
             return;

@@ -74,6 +74,7 @@ public class StringDecoder extends MessageToMessageDecoder<ByteBuf> {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
+        // 直接把byteBuf 中数组转string 具体实现为 new String(array, 0, offset, len);
         out.add(msg.toString(charset));
     }
 }
