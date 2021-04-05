@@ -172,6 +172,7 @@ public class WriteTimeoutHandler extends ChannelOutboundHandlerAdapter {
      * Is called when a write timeout was detected
      */
     protected void writeTimedOut(ChannelHandlerContext ctx) throws Exception {
+
         if (!closed) {
             ctx.fireExceptionCaught(WriteTimeoutException.INSTANCE);
             ctx.close();
@@ -200,6 +201,7 @@ public class WriteTimeoutHandler extends ChannelOutboundHandlerAdapter {
             // Was not written yet so issue a write timeout
             // The promise itself will be failed with a ClosedChannelException once the close() was issued
             // See https://github.com/netty/netty/issues/2159
+            // 还没写完关闭
             if (!promise.isDone()) {
                 try {
                     writeTimedOut(ctx);

@@ -95,7 +95,9 @@ public class ReadTimeoutHandler extends IdleStateHandler {
      */
     protected void readTimedOut(ChannelHandlerContext ctx) throws Exception {
         if (!closed) {
+            // 触发异常
             ctx.fireExceptionCaught(ReadTimeoutException.INSTANCE);
+            // 关闭连接
             ctx.close();
             closed = true;
         }

@@ -99,6 +99,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             if (value == null) {
                 childOptions.remove(childOption);
             } else {
+                // put 到map中
                 childOptions.put(childOption, value);
             }
         }
@@ -141,6 +142,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         final ChannelHandler currentChildHandler = childHandler;
 
         //构建ServerBootstrap设置的childOptions参数
+        // 转化成了 currentChildOptions
         final Entry<ChannelOption<?>, Object>[] currentChildOptions;
         synchronized (childOptions) {
             currentChildOptions = childOptions.entrySet().toArray(EMPTY_OPTION_ARRAY);
@@ -196,6 +198,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         private final Entry<AttributeKey<?>, Object>[] childAttrs;
         private final Runnable enableAutoReadTask;
 
+        // 接收连接后的后续处理器  这里传入childOptions
+        // 在channelRead 方法中  新连接的channel传入时设置进去即可
         ServerBootstrapAcceptor(
                 final Channel channel, EventLoopGroup childGroup, ChannelHandler childHandler,
                 Entry<ChannelOption<?>, Object>[] childOptions, Entry<AttributeKey<?>, Object>[] childAttrs) {
@@ -225,7 +229,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             //将childHandler添加到新连接的Channel的管道中
             //这时候新Channel还没有执行注册
             child.pipeline().addLast(childHandler);
-
+            // 将childOptions设置到 child  Channel 中
             setChannelOptions(child, childOptions, logger);
             setAttributes(child, childAttrs);
 

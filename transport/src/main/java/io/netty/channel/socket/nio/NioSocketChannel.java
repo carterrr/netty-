@@ -488,9 +488,11 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
 
         @Override
         public <T> boolean setOption(ChannelOption<T> option, T value) {
+            // jdk7往后NIO自身带有channel  直接设置到jdk的NioChannelOption当中
             if (PlatformDependent.javaVersion() >= 7 && option instanceof NioChannelOption) {
                 return NioChannelOption.setOption(jdkChannel(), (NioChannelOption<T>) option, value);
             }
+            // 否则 设置到socket中  这种是旧的设置方式  这种方式每来一个新的option就要加个else if
             return super.setOption(option, value);
         }
 

@@ -107,7 +107,7 @@ public class IdleStateHandler extends ChannelDuplexHandler {
             firstWriterIdleEvent = firstAllIdleEvent = true;
         }
     };
-
+    // 标识是否有写的意图
     private final boolean observeOutput;
     private final long readerIdleTimeNanos;
     private final long writerIdleTimeNanos;
@@ -125,6 +125,7 @@ public class IdleStateHandler extends ChannelDuplexHandler {
     private boolean firstAllIdleEvent = true;
 
     private byte state; // 0 - none, 1 - initialized, 2 - destroyed
+    // 标识是否正在读数据
     private boolean reading;
 
     private long lastChangeCheckTimeStamp;
@@ -147,6 +148,7 @@ public class IdleStateHandler extends ChannelDuplexHandler {
      *        an {@link IdleStateEvent} whose state is {@link IdleState#ALL_IDLE}
      *        will be triggered when neither read nor write was performed for
      *        the specified period of time.  Specify {@code 0} to disable.
+     *        三个控制参数 读/写/全部
      */
     public IdleStateHandler(
             int readerIdleTimeSeconds,
@@ -412,13 +414,18 @@ public class IdleStateHandler extends ChannelDuplexHandler {
      * https://github.com/netty/netty/issues/6150
      */
     private boolean hasOutputChanged(ChannelHandlerContext ctx, boolean first) {
+        // 正常情况下 observeOutput 是 false  意思是没有”写的意图“ 直接返回false
         if (observeOutput) {
 
+            // 两种情况
+            // 写了 但是缓冲区满了  写不进去
+            // 写一个很大的数据 确实在写过程中 但是还没完成
             // We can take this shortcut if the ChannelPromises that got passed into write()
             // appear to complete. It indicates "change" on message level and we simply assume
             // that there's change happening on byte level. If the user doesn't observe channel
             // writability events then they'll eventually OOME and there's clearly a different
             // problem and idleness is least of their concerns.
+           //
             if (lastChangeCheckTimeStamp != lastWriteTime) {
                 lastChangeCheckTimeStamp = lastWriteTime;
 
@@ -435,7 +442,7 @@ public class IdleStateHandler extends ChannelDuplexHandler {
             if (buf != null) {
                 int messageHashCode = System.identityHashCode(buf.current());
                 long pendingWriteBytes = buf.totalPendingWriteBytes();
-
+                                                              // 待发送字节数 ！= 上次发送字节数  还没发送完
                 if (messageHashCode != lastMessageHashCode || pendingWriteBytes != lastPendingWriteBytes) {
                     lastMessageHashCode = messageHashCode;
                     lastPendingWriteBytes = pendingWriteBytes;
@@ -446,6 +453,7 @@ public class IdleStateHandler extends ChannelDuplexHandler {
                 }
 
                 long flushProgress = buf.currentProgress();
+                // 写进度 不等于上次写的进度  写指针有变动  不是第一次就是正在写
                 if (flushProgress != lastFlushProgress) {
                     lastFlushProgress = flushProgress;
 
@@ -487,25 +495,31 @@ public class IdleStateHandler extends ChannelDuplexHandler {
 
         @Override
         protected void run(ChannelHandlerContext ctx) {
+            // 设置进来读idle时间
             long nextDelay = readerIdleTimeNanos;
+            // 非正在读数据  修改nextDelay为真正还有多久时间
             if (!reading) {
                 nextDelay -= ticksInNanos() - lastReadTime;
             }
-
+            // <=0 已经进入idle状态了 创建一个newIdleStateEvent 传递给pipeline
             if (nextDelay <= 0) {
+                // 无限定时  往后边一直定时  定时任务传入默认idle时间
                 // Reader is idle - set a new timeout and notify the callback.
                 readerIdleTimeout = schedule(ctx, this, readerIdleTimeNanos, TimeUnit.NANOSECONDS);
 
                 boolean first = firstReaderIdleEvent;
+                // 后续读idle都不是第一次  直接赋值false
                 firstReaderIdleEvent = false;
 
                 try {
+                    // 是否first也会传入
                     IdleStateEvent event = newIdleStateEvent(IdleState.READER_IDLE, first);
                     channelIdle(ctx, event);
                 } catch (Throwable t) {
                     ctx.fireExceptionCaught(t);
                 }
             } else {
+                // 否则开启一个定时idle监测task定时任务传下去
                 // Read occurred before the timeout - set a new timeout with shorter delay.
                 readerIdleTimeout = schedule(ctx, this, nextDelay, TimeUnit.NANOSECONDS);
             }
@@ -531,6 +545,8 @@ public class IdleStateHandler extends ChannelDuplexHandler {
                 firstWriterIdleEvent = false;
 
                 try {
+                    // 不能类似ReaderIdleTimeoutTask用！reading来判断
+                    //  可能在缓存中还没发出去 但是有在写
                     if (hasOutputChanged(ctx, first)) {
                         return;
                     }
