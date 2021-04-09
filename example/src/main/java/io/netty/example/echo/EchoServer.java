@@ -16,6 +16,8 @@
 package io.netty.example.echo;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -67,6 +69,12 @@ public final class EchoServer {
               // 都是socketchannel  而非 serverSocketChannel
              .childOption(ChannelOption.SO_KEEPALIVE, true)
              .childOption(NioChannelOption.SO_KEEPALIVE , true)
+              //显式 切换内存池/非内存池方式之一 DEFAULT 是默认值 默认堆外 堆内外见 io.netty.util.internal.PlatformDependent.DIRECT_BUFFER_PREFERRED
+              // 可以通过配置  DIRECT_BUFFER_PREFERRED io.netty.noPreferDirect 的方式隐式修改
+             .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+             //.childOption(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT)
+                    // 显式指定堆内/堆外  false为堆内
+                    .childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
              .handler(new LoggingHandler(LogLevel.INFO))
              .childHandler(new ChannelInitializer<SocketChannel>() {
                  @Override

@@ -205,6 +205,7 @@ public final class PlatformDependent {
 
         // We should always prefer direct buffers by default if we can use a Cleaner to release direct buffers.
         //当CLEANER 缓冲区清理器不是无操作的NOOP时，表示可以清理直接缓冲区，那么就会是true，在分配buffer的时候默认优先直接缓冲区
+        // 有cleaner方法释放堆外内存/io.netty.noPreferDirect设置为false或默认  DIRECT_BUFFER_PREFERRED才为true 开启堆外内存
         //可以通过io.netty.noPreferDirect参数设置
         DIRECT_BUFFER_PREFERRED = CLEANER != NOOP
                                   && !SystemPropertyUtil.getBoolean("io.netty.noPreferDirect", false);

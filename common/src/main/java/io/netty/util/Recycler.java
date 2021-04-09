@@ -166,12 +166,16 @@ public abstract class Recycler<T> {
     }
 
     @SuppressWarnings("unchecked")
+    // 对象池的get方法
     public final T get() {
+        // 未开启池化 直接new
         if (maxCapacityPerThread == 0) {
             return newObject((Handle<T>) NOOP_HANDLE);
         }
+        // 从池中取一个
         Stack<T> stack = threadLocal.get();
         DefaultHandle<T> handle = stack.pop();
+        // 为空新建
         if (handle == null) {
             handle = stack.newHandle();
             handle.value = newObject(handle);
@@ -222,6 +226,7 @@ public abstract class Recycler<T> {
             this.stack = stack;
         }
 
+        // 队象池归还对象
         @Override
         public void recycle(Object object) {
             if (object != value) {
@@ -232,7 +237,7 @@ public abstract class Recycler<T> {
             if (lastRecycledId != recycleId || stack == null) {
                 throw new IllegalStateException("recycled already");
             }
-
+            //放回对像
             stack.push(this);
         }
     }
